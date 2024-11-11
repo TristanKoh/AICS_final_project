@@ -17,7 +17,7 @@ for i in range(N):
             peers[i].rate_peer(peers[j], rating)
 
 # Initialize Blockchain and EigenTrust
-blockchain = bc.Blockchain()
+blockchain = bc.Blockchain(difficulty = 2)
 eigentrust = et.EigenTrust(peers)
 
 # Build the trust matrix and normalize
@@ -31,7 +31,10 @@ eigentrust.calculate_trust_scores()
 for i in range(N):
     trust_ratings = peers[i].get_ratings()  # Get the ratings from the peer
     trust_score = eigentrust.trust_scores[i, 0]  # Get the calculated trust score for the peer
-    blockchain.add_block(bc.Block(i + 1, blockchain.chain[-1].hash, time.time(), trust_ratings, trust_score))
+    new_block = bc.Block(i + 1, blockchain.chain[-1].hash, time.time(), trust_ratings, trust_score)
+    
+    # Simulate the consensus and adding block
+    blockchain.add_block(new_block)
 
 # Display the blockchain
 blockchain.display_chain()
