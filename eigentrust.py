@@ -63,9 +63,7 @@ class EigenTrust:
         for i in range(max_iterations):
             # Update trust scores based on the current trust matrix
             new_trust_scores = self.trust_matrix.dot(self.trust_scores)
-
-            print(str(i) + "th iter")
-            
+                        
             # Check for convergence (when trust scores stop changing)
             if np.linalg.norm(new_trust_scores - self.trust_scores) < epsilon:
                 break
@@ -78,31 +76,3 @@ class EigenTrust:
         """Display the final trust scores for each peer."""
         for i, peer in enumerate(self.peers):
             print(f"{peer.name}: {self.trust_scores[i, 0]:.4f}")
-
-# Example usage 
-# Create peers
-peers = [Peer(f"Peer {i+1}") for i in range(50)]
-
-# Randomly rate peers with varying biases
-for peer in peers:
-    for other_peer in peers:
-        if peer != other_peer:
-            # Generate a biased trust rating based on each peer's preference
-            rating = peer.biased_rating()
-            peer.rate_peer(other_peer, rating)
-
-
-# Initialize the EigenTrust algorithm with the peers
-eigentrust = EigenTrust(peers)
-
-# Build the trust matrix based on peer ratings
-eigentrust.build_trust_matrix()
-
-# Normalize the trust matrix
-eigentrust.normalize_trust_matrix()
-
-# Calculate trust scores using EigenTrust
-final_trust_scores = eigentrust.calculate_trust_scores()
-
-# Display the final trust scores
-eigentrust.display_trust_scores()
