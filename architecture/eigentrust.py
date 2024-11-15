@@ -1,29 +1,4 @@
-import random
 import numpy as np
-
-class Peer:
-    def __init__(self, name):
-        self.name = name
-        self.trust_ratings = {}  # Trust ratings for other peers
-        self.rating_bias = random.uniform(0.7, 1.5)  # Peer-specific rating bias (random)
-
-    def rate_peer(self, peer, rating):
-        """Rate another peer's content."""
-        if peer.name not in self.trust_ratings:
-            self.trust_ratings[peer.name] = []
-        self.trust_ratings[peer.name].append(rating)  # Store ratings given to other peers
-
-    def get_ratings(self):
-        """Return the ratings given by this peer."""
-        return self.trust_ratings
-
-    def biased_rating(self):
-        """Generate a biased trust rating, skewed by the peer's rating bias."""
-        base_rating = random.randint(1, 10)
-        adjusted_rating = base_rating * self.rating_bias  # Adjust by bias
-        # Ensure adjusted rating stays within 1-10
-        return min(max(int(adjusted_rating), 1), 10)
-
 
 class EigenTrust:
     def __init__(self, peers):
