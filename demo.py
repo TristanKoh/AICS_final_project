@@ -7,9 +7,16 @@ import time
 # Create peers
 N = 10  # Number of peers and blocks
 
+####################################################
+#### Intitialising P2P network and adding peers ####
+####################################################
+
 ## Add peers to network
+# Initialise DHT
+dht = p.DHT()
+
 # Create N peers
-peers = [p.Peer(f"Peer {i+1}") for i in range(N)]
+peers = [p.Peer(f"Peer {i+1}", dht) for i in range(N)]
 
 # Generate key pairs for peers
 for peer in peers:
@@ -32,6 +39,31 @@ peer_manager.register_peer(peers[1], message, signature_invalid)
 for peer in peers:
     peer_manager.add_peer(peer)
 
+############################################
+#### Storing and retrieving data via DHT####
+############################################
+
+# Generate and store sample data (a short string) for each peer
+for i, peer in enumerate(peers):
+    sample_data = f"This is Peer {i+1}'s sample data."
+
+    # Store the data in the DHT for each peer
+    key = f"peer_{i+1}_data"
+    peer.store_data_in_dht(key, sample_data)
+
+# Retrieve and display data from the DHT
+for i, peer in enumerate(peers):
+    key = f"peer_{i+1}_data"
+    retrieved_data = peer.retrieve_data_from_dht(key)
+    print(f"Data retrieved for {peer.name}: {retrieved_data}")
+
+# Display the contents of the DHT
+dht.display_data()
+
+
+##############################################
+#### Calculating EigenTrust for all peers ####
+##############################################
 
 ## Calculate EigenTrust 
 # Peers rate each other with biased ratings (randomly)
@@ -51,6 +83,10 @@ eigentrust.normalize_trust_matrix()
 
 # Calculate and display trust scores
 eigentrust.calculate_trust_scores()
+
+###########################################################
+#### Validating trust scores to be added to blockchain ####
+###########################################################
 
 ## Adding N blocks with trust ratings as block data into blockchain
 for i in range(N):

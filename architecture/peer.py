@@ -1,15 +1,22 @@
 import random
 import ecdsa
+import hashlib
 
 class Peer:
-    def __init__(self, name):
+    def __init__(self, name, dht):
         self.name = name
         self.trust_ratings = {}  # Trust ratings for other peers
         self.rating_bias = random.uniform(0.7, 1.5)  # Peer-specific rating bias (random)
         self.is_verified = False  # Indicates whether the peer is verified
         self.private_key = None  # Private key for signing messages (set later)
         self.public_key = None  # Public key (set during verification)
+        self.dht = dht
+        self.peer_id = self.generate_peer_id(name)
     
+    def generate_peer_id(self, name):
+        """Generate a unique ID for the peer based on its name."""
+        return int(hashlib.sha256(name.encode('utf-8')).hexdigest(), 16)
+
     def rate_peer(self, peer, rating):
         """Rate another peer's content."""
         if peer.name not in self.trust_ratings:
@@ -47,6 +54,46 @@ class Peer:
             return True
         except ecdsa.BadSignatureError:
             return False
+    
+    def store_data_in_dht(self, key, value):
+        """Store data in the DHT under the peer's ID."""
+        self.dht.insert_data(self.peer_id, key, value)
+
+    def retrieve_data_from_dht(self, key):
+        """Retrieve data from the DHT."""
+        return self.dht.search_data(self.peer_id, key)
+
+class DHT:
+    def __init__(self):
+        self.data_store = {}  # Main data store to hold key-value pairs
+    
+    def insert_data(self, peer_id, key, value):
+        """Insert data into the DHT at the appropriate location (based on key)."""
+        hashed_key = self.hash_key(key)
+        self.data_store[hashed_key] = (peer_id, value)  # Store key-value pair
+
+    def search_data(self, peer_id, key):
+        """Search for data in the DHT based on the key."""
+        hashed_key = self.hash_key(key)
+        
+        # Simulating a search and retrieval
+        if hashed_key in self.data_store:
+            stored_peer_id, value = self.data_store[hashed_key]
+            if stored_peer_id == peer_id:
+                return value
+            else:
+                return None  # Data found, but not owned by this peer
+        else:
+            return None  # Key not found
+
+    def hash_key(self, key):
+        """Generate a hashed key from the data's key."""
+        return int(hashlib.sha256(key.encode('utf-8')).hexdigest(), 16)
+
+    def display_data(self):
+        """Display the contents of the DHT."""
+        for key, value in self.data_store.items():
+            print(f"Key: {key}, Value: {value}")
 
 
 class PeerManager:
