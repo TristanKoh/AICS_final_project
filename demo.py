@@ -5,7 +5,7 @@ import time
 
 # Example usage 
 # Create peers
-N = 10  # Number of peers and blocks
+N = 5  # Number of peers and blocks
 
 ####################################################
 #### Intitialising P2P network and adding peers ####
@@ -51,11 +51,21 @@ for i, peer in enumerate(peers):
     key = f"peer_{i+1}_data"
     peer.store_data_in_dht(key, sample_data)
 
-# Retrieve and display data from the DHT
+# Check if DHT catches duplicate data
 for i, peer in enumerate(peers):
+    sample_data = f"This is Peer {i+1}'s sample data."
+
+    # Store the data in the DHT for each peer
     key = f"peer_{i+1}_data"
-    retrieved_data = peer.retrieve_data_from_dht(key)
-    print(f"Data retrieved for {peer.name}: {retrieved_data}")
+    peer.store_data_in_dht(key, sample_data)
+
+
+
+# Retrieve and display data from the DHT
+# for i, peer in enumerate(peers):
+#     key = f"peer_{i+1}_data"
+#     retrieved_data = peer.retrieve_data_from_dht(key)
+#     print(f"Data retrieved for {peer.name}: {retrieved_data}")
 
 # Display the contents of the DHT
 dht.display_data()

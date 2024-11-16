@@ -70,8 +70,26 @@ class DHT:
     def insert_data(self, peer_id, key, value):
         """Insert data into the DHT at the appropriate location (based on key)."""
         hashed_key = self.hash_key(key)
-        self.data_store[hashed_key] = (peer_id, value)  # Store key-value pair
-
+        
+        # Check if the key already exists in the DHT
+        if hashed_key in self.data_store:
+            stored_peer_id, existing_value = self.data_store[hashed_key]
+            
+            # Prevent duplication: Data is already stored for this key, return or handle conflict
+            if stored_peer_id == peer_id:
+                print(f"Data for key '{key}' already exists. Skipping insertion.")
+            else:
+                # Data exists but from a different peer
+                print(f"Warning: Key '{key}' already exists with a different peer (Peer {stored_peer_id}).")
+                # Optional: You could merge, overwrite, or handle this case differently
+                # For example, to overwrite the data or store both values:
+                # self.data_store[hashed_key] = (peer_id, value)  # Overwrite with new data
+                # Or merge the data if appropriate, depending on your requirements
+        else:
+            # Store key-value pair if key does not exist
+            self.data_store[hashed_key] = (peer_id, value)
+            print(f"Data for key '{key}' inserted successfully.")
+    
     def search_data(self, peer_id, key):
         """Search for data in the DHT based on the key."""
         hashed_key = self.hash_key(key)
