@@ -60,12 +60,11 @@ for i, peer in enumerate(peers):
     peer.store_data_in_dht(key, sample_data)
 
 
-
 # Retrieve and display data from the DHT
-# for i, peer in enumerate(peers):
-#     key = f"peer_{i+1}_data"
-#     retrieved_data = peer.retrieve_data_from_dht(key)
-#     print(f"Data retrieved for {peer.name}: {retrieved_data}")
+for i, peer in enumerate(peers):
+    key = f"peer_{i+1}_data"
+    retrieved_data = peer.retrieve_data_from_dht(key)
+    print(f"Data retrieved for {peer.name}: {retrieved_data}")
 
 # Display the contents of the DHT
 dht.display_data()
