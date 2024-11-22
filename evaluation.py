@@ -6,7 +6,7 @@ import pandas as pd
 
 # Example usage 
 # Create peers
-N = [500, 1000, 5000, 10000]
+N = [500, 1000, 3000, 5000, 8000, 10000]
 
 # Create dictionary for storage of time values
 time_vals = {
