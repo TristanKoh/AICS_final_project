@@ -13,16 +13,10 @@ class Blockchain:
         self.chain.append(genesis_block)
 
     def add_block(self, new_block):
-        """Add a new block to the blockchain after solving the Proof of Work puzzle."""
-        # Proof of Work (mining) step
-        new_block.mine_block(self.difficulty)
-        
-        # Validate the block before adding it to the chain
-        if self.is_valid_new_block(new_block):
-            previous_block = self.chain[-1]
-            new_block.previous_hash = previous_block.hash
-            new_block.hash = new_block.calculate_hash()
-            self.chain.append(new_block)
+        """Mine and add a new block to the blockchain."""
+        new_block.mine_block(self.difficulty)  # Mine the block
+        if self.is_valid_new_block(new_block):  # Validate the mined block
+            self.chain.append(new_block)  # Append to the chain
         else:
             print(f"Invalid block from peer {new_block.index}, rejecting...")
 
@@ -32,16 +26,11 @@ class Blockchain:
         if new_block.previous_hash != self.chain[-1].hash:
             print("Previous hash doesn't match.")
             return False
-        
+
         # 2. Check if the block hash meets the Proof of Work requirement (difficulty)
         if new_block.hash[:self.difficulty] != '0' * self.difficulty:
             print("Proof of Work failed.")
             return False
-        
-        # 3. (Optional) Further validation of trust data can be added here if needed
-        # For example, you could validate that the trust score matches a specific calculation:
-        # if not is_valid_trust_score(new_block):
-        #     return False
 
         # If all checks pass, return True
         return True
@@ -64,22 +53,30 @@ class Block:
         self.timestamp = timestamp
         self.data = data  # This will now hold trust ratings data
         self.trust_score = trust_score  # Add trust score to the block
+        self.nonce = 0
         self.hash = self.calculate_hash()
 
     def calculate_hash(self):
         """Calculate the hash of the block."""
-        value = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.trust_score}".encode()
+        value = f"{self.index}{self.previous_hash}{self.timestamp}{self.data}{self.trust_score}{self.nonce}".encode()
         return hashlib.sha256(value).hexdigest()
 
     def mine_block(self, difficulty):
-        """Mine the block using Proof of Work. The hash must have 'difficulty' number of leading zeros."""
+        """Mine the block using Proof of Work."""
         target = '0' * difficulty  # Target string (e.g., '0000' for difficulty=4)
 
-        counter = 0
-        
         while self.hash[:difficulty] != target:
-            counter += 1
-            self.timestamp = time.time()  # Update timestamp for each new attempt
-            self.hash = self.calculate_hash()  # Recalculate hash with new timestamp
-        
-        print(str(counter) + ": number of iterations for PoW")
+            self.nonce += 1
+            self.hash = self.calculate_hash()
+
+        print(f"Block mined with nonce: {self.nonce}")
+
+
+def mine_sequentially(blockchain, blocks_to_mine):
+    """
+    Mine multiple blocks sequentially and add them to the blockchain.
+    """
+    for block in blocks_to_mine:
+        # Assign the correct previous_hash before mining
+        block.previous_hash = blockchain.chain[-1].hash
+        blockchain.add_block(block)

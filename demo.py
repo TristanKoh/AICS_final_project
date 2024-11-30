@@ -97,14 +97,17 @@ eigentrust.calculate_trust_scores()
 #### Validating trust scores to be added to blockchain ####
 ###########################################################
 
-## Adding N blocks with trust ratings as block data into blockchain
+# Prepare blocks for mining
+blocks_to_mine = []
 for i in range(N):
     trust_ratings = peers[i].get_ratings()  # Get the ratings from the peer
     trust_score = eigentrust.trust_scores[i, 0]  # Get the calculated trust score for the peer
     new_block = bc.Block(i + 1, blockchain.chain[-1].hash, time.time(), trust_ratings, trust_score)
-    
-    # Simulate the consensus and adding block
-    blockchain.add_block(new_block)
+    blocks_to_mine.append(new_block)
+
+# Mine and add blocks in parallel
+bc.mine_sequentially(blockchain, blocks_to_mine)
+
 
 # Display the blockchain
 blockchain.display_chain()
