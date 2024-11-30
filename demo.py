@@ -8,11 +8,10 @@ import time
 N = 5  # Number of peers and blocks
 
 ####################################################
-#### Intitialising P2P network and adding peers ####
+#### Initializing P2P network and adding peers ####
 ####################################################
 
-## Add peers to network
-# Initialise DHT
+# Initialize DHT
 dht = p.DHT()
 
 # Create N peers
@@ -24,18 +23,17 @@ for peer in peers:
 
 # Register peers with messages and signatures
 peer_manager = p.PeerManager()
-
 message = "This is a registration message"
 
-# Simulate registering a verified peer
+# Register a verified peer
 signature = peers[0].sign_message(message)  # Peer 0 signs the message
 peer_manager.register_peer(peers[0], message, signature)
 
-# Simulate registering a non-verified peer (using invalid signature)
+# Register a non-verified peer (using invalid signature)
 signature_invalid = peers[1].sign_message("Fake message")
 peer_manager.register_peer(peers[1], message, signature_invalid)
 
-# Add the peers to the network
+# Add peers to the network
 for peer in peers:
     peer_manager.add_peer(peer)
 
@@ -43,22 +41,17 @@ for peer in peers:
 #### Storing and retrieving data via DHT####
 ############################################
 
-# Generate and store sample data (a short string) for each peer
+# Generate and store sample data for each peer
 for i, peer in enumerate(peers):
     sample_data = f"This is Peer {i+1}'s sample data."
-
-    # Store the data in the DHT for each peer
     key = f"peer_{i+1}_data"
     peer.store_data_in_dht(key, sample_data)
 
 # Check if DHT catches duplicate data
 for i, peer in enumerate(peers):
     sample_data = f"This is Peer {i+1}'s sample data."
-
-    # Store the data in the DHT for each peer
     key = f"peer_{i+1}_data"
     peer.store_data_in_dht(key, sample_data)
-
 
 # Retrieve and display data from the DHT
 for i, peer in enumerate(peers):
@@ -69,12 +62,10 @@ for i, peer in enumerate(peers):
 # Display the contents of the DHT
 dht.display_data()
 
-
 ##############################################
 #### Calculating EigenTrust for all peers ####
 ##############################################
 
-## Calculate EigenTrust 
 # Peers rate each other with biased ratings (randomly)
 for i in range(N):
     for j in range(N):
@@ -83,7 +74,7 @@ for i in range(N):
             peers[i].rate_peer(peers[j], rating)
 
 # Initialize Blockchain and EigenTrust
-blockchain = bc.Blockchain(difficulty = 2)
+blockchain = bc.Blockchain(difficulty=2)
 eigentrust = et.EigenTrust(peers)
 
 # Build the trust matrix and normalize
@@ -92,19 +83,22 @@ eigentrust.normalize_trust_matrix()
 
 # Calculate and display trust scores
 eigentrust.calculate_trust_scores()
+eigentrust.display_trust_scores()
 
 ###########################################################
 #### Validating trust scores to be added to blockchain ####
 ###########################################################
 
-## Adding N blocks with trust ratings as block data into blockchain
+# Prepare blocks for mining
+blocks_to_mine = []
 for i in range(N):
     trust_ratings = peers[i].get_ratings()  # Get the ratings from the peer
     trust_score = eigentrust.trust_scores[i, 0]  # Get the calculated trust score for the peer
     new_block = bc.Block(i + 1, blockchain.chain[-1].hash, time.time(), trust_ratings, trust_score)
-    
-    # Simulate the consensus and adding block
-    blockchain.add_block(new_block)
+    blocks_to_mine.append(new_block)
+
+# Mine and add blocks in parallel
+bc.mine_in_parallel(blockchain, blocks_to_mine)
 
 # Display the blockchain
 blockchain.display_chain()

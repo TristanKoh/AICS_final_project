@@ -6,7 +6,7 @@ import pandas as pd
 
 # Example usage 
 # Create peers
-N = [500, 1000, 3000, 5000, 8000, 10000]
+N = [100, 500, 800, 1000, 3000, 5000]
 
 # Create dictionary for storage of time values
 time_vals = {
@@ -32,17 +32,18 @@ def normalize_time_vals(time_vals):
     return normalized_dict
 
 
-for n in N:
-####################################################
-#### Intitialising P2P network and adding peers ####
-####################################################
+def run_simulation(N):
+    print(f"Running simulation for N = {N}")
 
-    ## Add peers to network
-    # Initialise DHT
+    ####################################################
+    #### Initializing P2P network and adding peers ####
+    ####################################################
+
+    # Initialize DHT
     dht = p.DHT()
 
     # Create N peers
-    peers = [p.Peer(f"Peer {i+1}", dht) for i in range(n)]
+    peers = [p.Peer(f"Peer {i+1}", dht) for i in range(N)]
 
     # Generate key pairs for peers
     for peer in peers:
@@ -50,15 +51,13 @@ for n in N:
 
     # Register peers with messages and signatures
     peer_manager = p.PeerManager()
-
     message = "This is a registration message"
 
-
-    # Simulate registering a verified peer
+    # Add peers to the network
     start = time.time()
 
     for peer in peers:
-        signature = peer.sign_message(message)  # Peer 0 signs the message
+        signature = peer.sign_message(message)
         peer_manager.register_peer(peer, message, signature)
         peer_manager.add_peer(peer)
 
@@ -92,45 +91,38 @@ for n in N:
     for i, peer in enumerate(peers):
         key = f"peer_{i+1}_data"
         retrieved_data = peer.retrieve_data_from_dht(key)
-        print(f"Data retrieved for {peer.name}: {retrieved_data}")
+        # print(f"Data retrieved for {peer.name}: {retrieved_data}")
 
     end = time.time()
     elapsed = end - start
 
     time_vals["retrieve_data"].append(elapsed)
 
-    # Display the contents of the DHT
-    dht.display_data()
 
     ##############################################
     #### Calculating EigenTrust for all peers ####
     ##############################################
 
-    ## Calculate EigenTrust 
-    # Peers rate each other with biased ratings (randomly)
-
     start = time.time()
-    
-    for i in range(n):
-        for j in range(n):
+
+    # Peers rate each other with biased ratings (randomly)
+    for i in range(N):
+        for j in range(N):
             if i != j:
                 rating = peers[i].biased_rating()
                 peers[i].rate_peer(peers[j], rating)
-    
+
     end = time.time()
     elapsed = end - start
-
+    
     time_vals["peer_trust_rating"].append(elapsed)
 
     # Initialize Blockchain and EigenTrust
-
-    # Set at difficulty at 0 for baseline purposes of easiest case
-    blockchain = bc.Blockchain(difficulty = 0)
+    blockchain = bc.Blockchain(difficulty=0)
     eigentrust = et.EigenTrust(peers)
 
-    # Build the trust matrix and normalize
     start = time.time()
-
+    # Build the trust matrix and normalize
     eigentrust.build_trust_matrix()
     eigentrust.normalize_trust_matrix()
 
@@ -139,31 +131,35 @@ for n in N:
 
     end = time.time()
     elapsed = end - start
-
     time_vals["calculate_EigenTrust"].append(elapsed)
 
     ###########################################################
     #### Validating trust scores to be added to blockchain ####
     ###########################################################
 
-    ## Adding N blocks with trust ratings as block data into blockchain
+    # Prepare blocks for mining
     start = time.time()
 
-    for i in range(n):
+    blocks_to_mine = []
+    for i in range(N):
         trust_ratings = peers[i].get_ratings()  # Get the ratings from the peer
         trust_score = eigentrust.trust_scores[i, 0]  # Get the calculated trust score for the peer
         new_block = bc.Block(i + 1, blockchain.chain[-1].hash, time.time(), trust_ratings, trust_score)
-        
-        # Simulate the consensus and adding block
-        blockchain.add_block(new_block)
+        blocks_to_mine.append(new_block)
+    
+    # Mine and add blocks in parallel
+    bc.mine_in_parallel(blockchain, blocks_to_mine)
     
     end = time.time()
     elapsed = end - start
-
     time_vals["add_block"].append(elapsed)
 
-    # Display the blockchain
-    # blockchain.display_chain()
+# Run simulations
+for n in N:
+    print(n)
+    run_simulation(n)
+
+
 
 print(time_vals)
 
@@ -178,4 +174,3 @@ df_avg_time_vals["num_peers"] = N
 
 df_time_vals.to_csv("time_vals.csv", index = False)
 df_avg_time_vals.to_csv("avg_time_vals.csv", index = False)
-
