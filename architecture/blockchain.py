@@ -35,6 +35,15 @@ class Blockchain:
         # If all checks pass, return True
         return True
 
+    def mine_sequentially(self, blocks_to_mine):
+        """
+        Mine multiple blocks sequentially and add them to the blockchain.
+        """
+        for block in blocks_to_mine:
+            # Assign the correct previous_hash before mining
+            block.previous_hash = self.chain[-1].hash
+            self.add_block(block)
+
     def display_chain(self):
         """Display the blockchain."""
         for block in self.chain:
@@ -70,13 +79,3 @@ class Block:
             self.hash = self.calculate_hash()
 
         print(f"Block mined with nonce: {self.nonce}")
-
-
-def mine_sequentially(blockchain, blocks_to_mine):
-    """
-    Mine multiple blocks sequentially and add them to the blockchain.
-    """
-    for block in blocks_to_mine:
-        # Assign the correct previous_hash before mining
-        block.previous_hash = blockchain.chain[-1].hash
-        blockchain.add_block(block)

@@ -106,7 +106,7 @@ for i in range(N):
     blocks_to_mine.append(new_block)
 
 # Mine and add blocks in parallel
-bc.mine_sequentially(blockchain, blocks_to_mine)
+blockchain.mine_sequentially(blocks_to_mine)
 
 
 # Display the blockchain
