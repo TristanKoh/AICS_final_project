@@ -148,7 +148,7 @@ def run_simulation(N):
         blocks_to_mine.append(new_block)
     
     # Mine and add blocks in parallel
-    bc.mine_in_parallel(blockchain, blocks_to_mine)
+    blockchain.mine_in_parallel(blockchain, blocks_to_mine)
     
     end = time.time()
     elapsed = end - start

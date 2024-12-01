@@ -13,11 +13,10 @@ class Blockchain:
         genesis_block = Block(0, '0', time.time(), {}, 0)
         self.chain.append(genesis_block)
 
-    def add_block(self, new_block, process_queue):
-        """Add a new block to the blockchain after parallel mining."""
-        mined_block = process_queue.get()  # Retrieve the mined block from the queue
-        if self.is_valid_new_block(mined_block):
-            self.chain.append(mined_block)
+    def add_block(self, new_block):
+        """Add a mined block to the blockchain."""
+        if self.is_valid_new_block(new_block):
+            self.chain.append(new_block)
         else:
             print(f"Invalid block from peer {new_block.index}, rejecting...")
 
@@ -27,14 +26,48 @@ class Blockchain:
         if new_block.previous_hash != self.chain[-1].hash:
             print("Previous hash doesn't match.")
             return False
-        
+
         # 2. Check if the block hash meets the Proof of Work requirement (difficulty)
         if new_block.hash[:self.difficulty] != '0' * self.difficulty:
             print("Proof of Work failed.")
             return False
-        
+
         # If all checks pass, return True
         return True
+
+    def mine_in_parallel(self, blocks_to_mine, max_processes=None):
+        """
+        Mine multiple blocks in parallel and add them sequentially to the blockchain.
+        """
+        if max_processes is None:
+            max_processes = min(cpu_count(), len(blocks_to_mine))  # Limit parallelism to available cores
+
+        with Manager() as manager:
+            process_queue = manager.Queue()  # Shared queue for mined blocks
+            processes = []
+
+            # Split blocks into batches to avoid overwhelming the system
+            for block in blocks_to_mine:
+                # Assign the correct previous_hash before mining
+                block.previous_hash = self.chain[-1].hash
+
+                # Create a process for mining the block
+                process = Process(target=block.mine_block, args=(self.difficulty, process_queue))
+                processes.append(process)
+                if len(processes) == max_processes:  # Start a batch of processes
+                    for p in processes:
+                        p.start()
+                    for p in processes:
+                        p.join()  # Wait for batch to finish
+                    processes.clear()  # Reset for the next batch
+
+            # Collect mined blocks and add them to the blockchain sequentially
+            while not process_queue.empty():
+                mined_block = process_queue.get()
+
+                # Validate and add the block sequentially
+                mined_block.previous_hash = self.chain[-1].hash
+                self.add_block(mined_block)
 
     def display_chain(self):
         """Display the blockchain."""
@@ -72,42 +105,3 @@ class Block:
 
         print(f"Block mined with nonce: {self.nonce}")
         process_queue.put(self)  # Send the mined block to the main process
-
-
-def mine_in_parallel(blockchain, blocks_to_mine, max_processes=None):
-    """
-    Mine multiple blocks in parallel and add them sequentially to the blockchain.
-    """
-    if max_processes is None:
-        max_processes = min(cpu_count(), len(blocks_to_mine))  # Limit parallelism to available cores
-
-    with Manager() as manager:
-        process_queue = manager.Queue()  # Shared queue for mined blocks
-        processes = []
-
-        # Split blocks into batches to avoid overwhelming the system
-        for block in blocks_to_mine:
-            # Assign the correct previous_hash before mining
-            block.previous_hash = blockchain.chain[-1].hash
-
-            # Create a process for mining the block
-            process = Process(target=block.mine_block, args=(blockchain.difficulty, process_queue))
-            processes.append(process)
-            if len(processes) == max_processes:  # Start a batch of processes
-                for p in processes:
-                    p.start()
-                for p in processes:
-                    p.join()  # Wait for batch to finish
-                processes.clear()  # Reset for the next batch
-
-        # Collect mined blocks and add them to the blockchain sequentially
-        while not process_queue.empty():
-            mined_block = process_queue.get()
-
-            # Validate and add the block sequentially
-            mined_block.previous_hash = blockchain.chain[-1].hash
-            if blockchain.is_valid_new_block(mined_block):
-                blockchain.chain.append(mined_block)
-            else:
-                print(f"Invalid block from peer {mined_block.index}, rejecting...")
-
